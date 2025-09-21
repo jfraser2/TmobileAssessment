@@ -22,25 +22,23 @@ import io.swagger.v3.oas.annotations.Parameter;
 //import io.swagger.annotations.ApiImplicitParam;
 import springboot.autowire.helpers.StringBuilderContainer;
 import springboot.autowire.helpers.ValidationErrorContainer;
-import springboot.dto.request.CreateNotification;
-import springboot.dto.request.GetById;
-import springboot.dto.response.NonModelAdditionalFields;
-import springboot.dto.validation.exceptions.BuildNotificationException;
+import springboot.dto.request.CreateTask;
+import springboot.dto.request.GetByStatus;
 import springboot.dto.validation.exceptions.DatabaseRowNotFoundException;
 import springboot.dto.validation.exceptions.EmptyListException;
 import springboot.dto.validation.exceptions.RequestValidationException;
-import springboot.entities.NotificationEntity;
+import springboot.entities.TaskEntity;
 import springboot.errorHandling.helpers.ApiValidationError;
-import springboot.services.interfaces.Notification;
+import springboot.services.interfaces.Task;
 import springboot.services.validation.request.RequestValidationService;
 
 @RestController
 @RequestMapping(path="/rest/api")
-public class NotificationController
+public class TaskController
 	extends ControllerBase
 {
 	@Autowired
-	private Notification notificationService;
+	private Task taskService;
 	
 	@Autowired
 	@Qualifier("requestValidationErrorsContainer")
@@ -55,13 +53,13 @@ public class NotificationController
 			consumes = MediaType.APPLICATION_JSON_VALUE,
 			produces = MediaType.APPLICATION_JSON_VALUE
 	)
-	public ResponseEntity<Object> createTask(@RequestBody CreateNotification data,
-		HttpServletRequest request,  @Parameter(hidden = true) @Autowired RequestValidationService<CreateNotification> createNotificationValidation)
+	public ResponseEntity<Object> createTask(@RequestBody CreateTask data,
+		HttpServletRequest request,  @Parameter(hidden = true) @Autowired RequestValidationService<CreateTask> createTaskValidation)
 		throws RequestValidationException, DatabaseRowNotFoundException, AccessDeniedException
 	{
 		
 		// single field validation
-		createNotificationValidation.validateRequest(data, requestValidationErrorsContainer, null);
+		createTaskValidation.validateRequest(data, requestValidationErrorsContainer, null);
 		List<ApiValidationError> errorList = requestValidationErrorsContainer.getValidationErrorList();
 		
 		if (errorList.size() > 0)
@@ -70,23 +68,11 @@ public class NotificationController
 			throw new RequestValidationException(errorList);
 		}
 		
-		// multiple field validation
-		if(!notificationService.validateTemplateFields(data)) {
-			List<ApiValidationError> templateFieldsError = notificationService.generateTemplateFieldsError(data);
-			throw new RequestValidationException(templateFieldsError);
-		}
-		
-		NotificationEntity ne = null;
-		try {
-			ne = notificationService.buildNotificationEntity(data);
-		} catch (BuildNotificationException bne) {
-			throw new DatabaseRowNotFoundException(bne.getMessage());
-		}
-		
-		NotificationEntity savedEntity = notificationService.persistData(ne);
+		TaskEntity te = taskService.buildTaskEntity(data);
+		TaskEntity savedEntity = taskService.persistData(te);
 		
 		String jsonString = goodResponse(savedEntity, requestStringBuilderContainer, null);
-		ne = null;
+		te = null;
 		savedEntity = null;
 		
 		// support CORS
@@ -104,7 +90,7 @@ public class NotificationController
 		throws EmptyListException, AccessDeniedException
 	{
 		
-		List<NotificationEntity> aList = notificationService.findAll();
+		List<TaskEntity> aList = taskService.findAll();
 		boolean isEmpty = true;
 		if(null != aList && aList.size() > 0) {
 			isEmpty = false;
@@ -124,16 +110,16 @@ public class NotificationController
 	}
 	
 	@RequestMapping(method = {RequestMethod.GET},
-			path = "/v1/findByTaskStatus/{status}",
+			path = "/v1/findByTaskStatus/{taskStatus}",
 			produces = MediaType.APPLICATION_JSON_VALUE
 	)
-	public ResponseEntity<Object> findByNotificationId(@PathVariable(required = true) String id,
-		HttpServletRequest request, @Parameter(hidden = true) @Autowired RequestValidationService<GetById> getByIdValidation)
-		throws RequestValidationException, DatabaseRowNotFoundException, AccessDeniedException
+	public ResponseEntity<Object> findByTaskStatus(@PathVariable(required = true) String taskStatus,
+		HttpServletRequest request, @Parameter(hidden = true) @Autowired RequestValidationService<GetByStatus> getByTaskStatusValidation)
+		throws RequestValidationException, EmptyListException, AccessDeniedException
 	{
 		
-		GetById data = new GetById(id);
-		getByIdValidation.validateRequest(data, requestValidationErrorsContainer, null);
+		GetByStatus data = new GetByStatus(taskStatus);
+		getByTaskStatusValidation.validateRequest(data, requestValidationErrorsContainer, null);
 		List<ApiValidationError> errorList = requestValidationErrorsContainer.getValidationErrorList();
 		
 		if (errorList.size() > 0)
@@ -142,29 +128,23 @@ public class NotificationController
 			throw new RequestValidationException(errorList);
 		}
 		
-		Long tempId = Long.valueOf(id);
-		NotificationEntity record = notificationService.findById(tempId);
-		if(null == record) {
-			throw new DatabaseRowNotFoundException("The Notification for Id: " + id + " does not exist.");
+		List<TaskEntity> statusList = taskService.findByTaskStatus(taskStatus);
+		boolean isEmpty = true;
+		if(null != statusList && statusList.size() > 0) {
+			isEmpty = false;
 		}
 		
-		String jsonString = null;
-		String substitutedText = notificationService.generatePersonalization(record);
-		if (null != substitutedText && substitutedText.length() > 0) {
-			NonModelAdditionalFields nonModelAdditionalFields = new NonModelAdditionalFields();
-			nonModelAdditionalFields.setContent(substitutedText);
-			jsonString = goodResponse(record, requestStringBuilderContainer, nonModelAdditionalFields);			
-		} else {
-			jsonString = goodResponse(record, requestStringBuilderContainer, null);			
+		if(isEmpty) {
+			throw new EmptyListException("No Task Table rows exist for Task Status: " + taskStatus, "TaskEntity");
 		}
 		
-		record = null;
+		List<Object> objectList = new ArrayList<Object>(statusList);
+		String jsonString = goodResponseList(objectList, requestStringBuilderContainer);
 		
 		// support CORS
 		HttpHeaders aResponseHeader = createResponseHeader(request);
 		
 		return new ResponseEntity<>(jsonString, aResponseHeader, HttpStatus.OK);
 	}
-	
 	
 }
