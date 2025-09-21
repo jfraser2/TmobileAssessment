@@ -153,20 +153,20 @@
 		    <artifactId>tomcat-jdbc</artifactId>
 		</dependency>
 				
-<!-- SQLite in memory database -->
-
-<!--   3.50.1.0 is latest, managed version is 3.49.1.0 -->
-        <dependency>
-            <groupId>org.xerial</groupId>
-            <artifactId>sqlite-jdbc</artifactId>
-        </dependency>
-        
-<!--   7.0.3.Final is latest, managed version is 6.6.18.Final -->
 		<dependency>
-    			<groupId>org.hibernate.orm</groupId>
-    			<artifactId>hibernate-community-dialects</artifactId>
-		</dependency>        
-		
+    		<groupId>org.apache.tomcat</groupId>
+    		<artifactId>tomcat-juli</artifactId>
+    		<version>10.1.42</version>
+ 		</dependency>
+				
+<!-- H2 in memory database -->
+				
+		<dependency>
+    		<groupId>com.h2database</groupId>
+    		<artifactId>h2</artifactId>
+    		<scope>runtime</scope>
+		</dependency>
+				
 <!-- jakarta.validation -->
     	<dependency>
         	<groupId>org.springframework.boot</groupId>

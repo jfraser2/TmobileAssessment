@@ -1,6 +1,7 @@
 package springboot.controllers.rest;
 
 import java.lang.reflect.Method;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,6 +20,7 @@ import springboot.autowire.helpers.StringBuilderContainer;
 import springboot.dto.response.NonModelAdditionalFields;
 import springboot.dto.response.ResultStatus;
 import springboot.enums.MapperEnum;
+import springboot.errorHandling.helpers.ZonedDateTimeAdapter;
 
 public abstract class ControllerBase
 {
@@ -101,7 +103,9 @@ public abstract class ControllerBase
 		try {
 			if (null != anObjectList && anObjectList.size() > 0)
 			{
-				Gson gson = new GsonBuilder().serializeNulls().create();
+		        GsonBuilder gsonBuilder = new GsonBuilder();
+		        gsonBuilder.registerTypeAdapter(ZonedDateTime.class, new ZonedDateTimeAdapter());
+		        Gson gson = gsonBuilder.serializeNulls().create();
 				jsonString = gson.toJson(anObjectList);
 			}
 		}
