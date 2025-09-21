@@ -50,7 +50,10 @@ public enum ZonedDateTimeEnum {
 		}
 		
 		return tempZoneId;
-		
+	}
+	
+	public ZoneId getZoneId() {
+		return this.zoneId;
 	}
 	
 	public void setZoneId(String newZoneId) {
