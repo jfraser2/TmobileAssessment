@@ -42,7 +42,7 @@ public class PersistenceJpaConfig
 	    emfb.setJpaProperties(additionalProperties());
 	    emfb.setJpaVendorAdapter(vendorAdapter);
 	    emfb.setValidationMode(ValidationMode.NONE); // Needed for H2 to work in Docker
-	    emfb.setPersistenceUnitName("RegistrationMicroServicePU");
+	    emfb.setPersistenceUnitName("TmobileAssessmentPU");
 	    
 	    return emfb;
 	}	
